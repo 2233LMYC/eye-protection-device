@@ -1,0 +1,602 @@
+/**
+  ******************************************************************************
+  * @file    Project/main.c 
+  * @author  MCD Application Team
+  * @version V2.1.0
+  * @date    18-November-2011
+  * @brief   Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
+  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
+  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
+  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  *
+  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  ******************************************************************************
+  */ 
+
+/*  接口说明  
+ * 将PD1和PD2 设为推挽输出 连接LED1和LED2
+ * 将PD3和PD4 设为上拉输入 连接按键KEY1和KEY2
+ * 将PC3 设为推挽输出 连接BEEP
+ * 将PC4 设为推挽输出 连接LIGHT
+ * 将PC5 设为推挽输出 连接DEVICE
+ */
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm8s.h"
+#include "uart.h"
+
+/* Private defines -----------------------------------------------------------*/
+
+#define ADC_LOW 1020
+#define ADC_HIGH 1010
+
+unsigned int key_time = 0;
+int key_long_time = 0;   //长按标志位
+int key_short_time = 0;  //短按标志位
+
+int low_flag  =   0;//低电压退出标志位
+
+unsigned int key_time_count = 0;
+
+unsigned int timing_mode = 0;   // =0 模式1   =1 模式2
+unsigned int timing_time = 0;   // 定时器定时时间 单位分钟 =10 定时10分钟; =15 定时15分钟
+
+unsigned char light_flag = 0;   // 激光开关标志位 =1 激光开; =0 激光关
+unsigned char beep_flag = 0;    // 蜂鸣器
+unsigned char device_flag = 0;  // 设备
+unsigned char flag = 1;     
+
+unsigned int adc_Value=0;    //电压检测初始值
+
+unsigned int adc_val = 0;
+
+unsigned char ad_flag = 0;
+
+#define LED1_OFF    GPIO_WriteHigh(GPIOC, GPIO_PIN_6)
+#define LED1_ON     GPIO_WriteLow(GPIOC, GPIO_PIN_6)
+#define LED2_OFF    GPIO_WriteHigh(GPIOC, GPIO_PIN_7)
+#define LED2_ON     GPIO_WriteLow(GPIOC, GPIO_PIN_7)
+#define BEEP_ON     GPIO_WriteHigh(GPIOC, GPIO_PIN_3)
+#define BEEP_OFF    GPIO_WriteLow(GPIOC, GPIO_PIN_3)
+#define LIGHT_ON    GPIO_WriteHigh(GPIOC, GPIO_PIN_4)
+#define LIGHT_OFF   GPIO_WriteLow(GPIOC, GPIO_PIN_4)
+#define DEVICE_ON   GPIO_WriteHigh(GPIOC, GPIO_PIN_5)
+#define DEVICE_OFF  GPIO_WriteLow(GPIOC, GPIO_PIN_5)
+
+#define KEY1        GPIO_ReadInputPin(GPIOD, GPIO_PIN_3)
+#define KEY2        GPIO_ReadInputPin(GPIOD, GPIO_PIN_4)
+
+#define L_TIME      5 //单位 minute
+#define S_TIME      3 //单位 minute
+
+#define key_time_long   3000    //单位ms
+#define key_time_short  1000    //单位ms
+
+/*********************************************************************************
+*   函 数 名: delay_us
+*   功能说明: 微秒延时程序，注意此函数的运行环境为(16M时钟速度)
+*   形    参：nCount要延时的微秒数，输入nCount=1微妙
+*   返 回 值: 无
+*********************************************************************************/
+void delayus(unsigned int nCount)   //16M 晶振时  延时 1个微妙
+{
+    nCount*=3;//等同于 nCount=nCount*3  相当于把nCount变量扩大3倍
+    while(--nCount);//nCount变量数值先减一，再判断nCount的数值是否大于0，大于0循环减一，等于0退出循环。
+}
+
+/*********************************************************************************
+*   函 数 名: delay_ms
+*   功能说明: 毫秒延时程序，注意此函数的运行环境为(16M时钟速度)
+*   形    参：nCount要延时的毫秒数，输入nCount=1毫秒
+*   返 回 值: 无
+*********************************************************************************/
+void delayms(unsigned int nCount)  //16M 晶振时  延时 1个毫秒
+{
+    while(nCount--)//先判断while()循环体里的nCount数值是否大于0，大于0循环，减一执行循环体，等于0退出循环。
+    {
+        delayus(1000);//调用微妙延时函数，输入1000等译演示1毫秒。
+    }
+}
+
+/**
+  * @brief   定时器1初始化
+  * @param   无
+  * @retval  无
+  */
+void TIM1_Init(void)
+{
+  //时钟初始化
+    CLK_PeripheralClockConfig(CLK_PERIPHERAL_TIMER1, ENABLE);
+    
+  //初始化TIM1时基单元 
+  //入口参数1：TIM1_Prescaler：预分频值（0x0000）
+  //入口参数2：TIM1_CounterMode：计数模式
+  //入口参数3：TIM1_Period：自动重装载值（0x00）
+  //入口参数4：TIM1_RepetitionCounter：重复计数器值（0x0000）
+  TIM1_TimeBaseInit(15, TIM1_COUNTERMODE_UP, 1000, 0);
+  
+  //使能自动重载载值
+  TIM1_ARRPreloadConfig(ENABLE);
+  
+  //使能数据更新中断
+  TIM1_ITConfig(TIM1_IT_UPDATE, ENABLE);
+
+  //使能定时器1
+  TIM1_Cmd(ENABLE);
+}
+
+
+
+void ADC_Init(void)     //自定义ADC转换初始化函数
+{
+
+  	GPIO_Init(GPIOD, GPIO_PIN_2, GPIO_MODE_IN_FL_NO_IT);      //引脚初始化  初始化ADC通道引脚
+	ADC1_DeInit();
+        ADC1_Init(ADC1_CONVERSIONMODE_SINGLE,      //单次转换
+                  ADC1_CHANNEL_3,                  //通道
+                  ADC1_PRESSEL_FCPU_D2,            //预定标器选择 分频器  fMASTER 可以被分频 2 到 18
+                  ADC1_EXTTRIG_TIM,                //从内部的TIM1 TRGO事件转换
+                  DISABLE,                         //是否使能该触发方式
+                  ADC1_ALIGN_RIGHT,                //对齐方式（可以左右对齐）
+                  ADC1_SCHMITTTRIG_CHANNEL3,       //指定触发通道
+                  ENABLE);                         //是否使能指定触发通道
+    ADC1_Cmd(ENABLE);                          //使能ADC
+
+    
+}
+
+uint16_t ADC_Read(void)
+{
+  ADC1_StartConversion();                      //启动AD转换
+  while(RESET == ADC1_GetFlagStatus(ADC1_FLAG_EOC));   //等待转换完成
+  ADC1_ClearFlag(ADC1_FLAG_EOC);               //清除标志
+  uint16_t value = ADC1_GetConversionValue();            //读取AD值 
+  return value;
+}
+
+
+/**
+ * @brief Timer1 Update/Overflow/Trigger/Break Interrupt routine.
+ * @param  None
+ * @retval None
+ */
+INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
+{
+  /* In order to detect unexpected events during development,
+     it is recommended to set a breakpoint on the following instruction.
+  */
+    static unsigned long i = 0;
+    static unsigned int j = 0;
+    
+    static unsigned int m = 0;
+    m++;
+    
+    
+    if (light_flag == 1) //激光开启 定时关闭
+    {
+        i++;
+      
+        if (i == (timing_time * 60000)) //tipe:60*1000=60000ms=60s*min 10min=600s
+  //      if (i == (timing_time * 6000)) //   tipe:                       10min=60s
+        {
+            i = 0;
+            light_flag = 0;
+            LIGHT_OFF;
+            beep_flag = 6;  //tipe:蜂鸣器响的次数*2  6-->3次
+            key_short_time = 0; 
+            //BEEP_ON;
+        }
+    }
+    else
+    {
+        i = 0;
+    }
+  
+    
+    if (beep_flag > 0) //激光定时自动关闭 蜂鸣器滴滴
+    {
+    
+        j++;
+        if (j == 300)  //tipe:蜂鸣器响时间300ms
+        {
+            j = 0;
+            
+            if ((beep_flag % 2) == 0)
+            {
+              BEEP_ON;
+            }
+            else
+            {
+              BEEP_OFF;
+            }  
+            
+            beep_flag--;
+        }     
+    }
+    else
+    {
+        j = 0;
+        BEEP_OFF;
+    }  
+
+    if (m == 2000) //tipe:2000ms做一次电压检测
+    {
+      m = 0;
+      if (ad_flag == 0)
+      {
+        ad_flag = 1;
+      } 
+    }
+   
+    //清除更新标志位
+    TIM1_ClearITPendingBit(TIM1_IT_UPDATE);
+}
+
+void main(void)
+{
+    CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);//时钟速度为内部16M，1分频
+    
+    __enable_interrupt();//中断使能                                 
+    
+
+    GPIO_Init(GPIOC, GPIO_PIN_6, GPIO_MODE_OUT_PP_HIGH_FAST);
+    GPIO_Init(GPIOC, GPIO_PIN_7, GPIO_MODE_OUT_PP_HIGH_FAST);
+    GPIO_Init(GPIOD, GPIO_PIN_3, GPIO_MODE_IN_PU_NO_IT);
+    GPIO_Init(GPIOD, GPIO_PIN_4, GPIO_MODE_IN_PU_NO_IT);
+    GPIO_Init(GPIOC, GPIO_PIN_3, GPIO_MODE_OUT_PP_HIGH_FAST);
+    GPIO_Init(GPIOC, GPIO_PIN_4, GPIO_MODE_OUT_PP_HIGH_FAST);
+    GPIO_Init(GPIOC, GPIO_PIN_5, GPIO_MODE_OUT_PP_HIGH_FAST);
+    
+   TIM1_Init(); //中断1ms一次
+
+     //初始化完成
+    LED1_OFF;
+    LED2_OFF;
+    LIGHT_OFF;
+    BEEP_OFF; 
+    DEVICE_OFF;  
+    
+    while (flag == 1)
+    {
+      if (KEY1 == 0)
+      {
+        delayms(10);
+        if (KEY1 == 0)
+        {
+          key_time = 0;
+          while (!KEY1)
+          {
+              delayms(1);
+              key_time++;
+              if (key_time >=key_time_long)
+              {
+                  break;
+              }
+          }
+          
+          if (key_time >= key_time_long)  //tipe:长按
+          {
+                        LED1_ON;
+            flag = 0;
+            device_flag = 1;
+            
+            beep_flag = 6;
+          }
+        }
+      }
+      else
+      {
+        if (key_time > 0)
+        {
+          key_time--;
+          delayms(1);
+        }
+      }
+    }
+
+    UART1_Config();        
+    ADC_Init();    //自定义ADC转换初始化函数
+    
+
+  
+    delayms(1000);
+    //BEEP_ON;
+    
+    while (1)
+    {
+      
+
+      
+        if (KEY1 == 0)
+        {
+            delayms(10);
+            if (KEY1 == 0)
+            {
+                key_time = 0;
+                
+          while (!KEY1)
+          {
+              delayms(1);
+              key_time++;
+              if (key_time >=key_time_long)
+              {
+                  break;
+ 
+              }
+          }
+                
+                
+                if (key_time >= key_time_long)  //tipe:长按
+                {
+                    //长按关闭设备   //其他功能全关    
+                    device_flag = 0;
+                    
+                    beep_flag = 6;
+            
+                }
+                else if (key_time >= key_time_short) //短按
+                {
+                    if (key_short_time == 0)//短按一下打开激光
+                    {
+                        key_short_time = 1;
+                        light_flag = 1;                       
+                    }
+                    else //短按两下关闭激光  
+                    { 
+                        key_short_time = 0; 
+                        light_flag = 0;
+                    }  
+                    
+                    beep_flag = 4;
+                }
+          if (key_time<key_time_short)
+          {
+          key_time--;
+          delayms(1);
+          }    
+            }
+        }
+        key_time = 0;   //时间清零   
+        
+        //打开激光情况下   模式切换按键失效
+        if (light_flag == 0)  //激光未打开
+        {
+            
+            if (KEY2 == 0)
+            {
+                delayms(10);
+                if (KEY2 == 0)
+                {
+                  key_time = 0;
+                
+          while (!KEY2)
+          {
+              delayms(1);
+              key_time++;
+              if (key_time >=key_time_short)
+              {
+                  break;
+              }
+          }
+                  
+                  if (key_time >= key_time_short)
+                  {  
+                    if (timing_mode == 0) 
+                    {
+                        timing_mode = 1;
+                    }
+                    else
+                    {
+                        timing_mode = 0;
+                    }
+                    
+                    beep_flag = 2;
+                  }
+                  
+                  
+                }
+                
+                
+            }
+       else
+      {
+        if (key_time > 0)
+        {
+          key_time--;
+          delayms(1);
+        }
+      }
+        }
+        
+        if (light_flag == 1) //打开激光
+        {
+            LIGHT_ON;
+        }
+        else //关闭激光
+        {
+            LIGHT_OFF;
+        }
+ 
+        if (timing_mode == 0)  //定时器操作
+        {
+            LED1_ON;
+            LED2_OFF;
+            timing_time = S_TIME; //tipe:定时时间 单位是分钟
+        }
+        else
+        {
+            LED1_OFF;
+            LED2_ON;
+            timing_time = L_TIME; //tipe:定时时间 单位是分钟
+        }
+    
+        if (device_flag == 1) //设备开关操作
+        {
+            DEVICE_ON;  
+        }
+        else
+        {
+            DEVICE_OFF; 
+            LIGHT_OFF;
+            //BEEP_OFF;  
+            LED1_OFF;
+            LED2_OFF;
+            light_flag = 0;
+            //beep_flag = 0;
+            key_short_time = 0; 
+            flag = 1;
+        }
+    
+    
+
+        
+      if (ad_flag == 1)
+      { low_flag=0;
+        adc_val = ADC_Read();
+        printf("adc_val = %d \r\n", adc_val);
+        
+        if (adc_val >ADC_HIGH)  //tipe:AD采样阈值 最大值为1024（3.3V） 最小值0 （0V）
+        {
+            flag = 1; //关闭设备
+            DEVICE_OFF; 
+            LIGHT_OFF;
+            //BEEP_OFF;  
+            LED1_OFF;
+            LED2_OFF;
+            light_flag = 0;
+            beep_flag = 6;
+            key_short_time = 0; 
+            
+        }
+        if (adc_val <ADC_LOW)  //tipe:AD采样阈值 最大值为1024（3.3V） 最小值0 （0V）
+        {
+          while(1){
+            LED1_OFF;
+            LED2_OFF;
+            beep_flag = 0;
+            delayms(1000);
+            LED1_ON;
+            LED2_ON;
+            beep_flag = 6       ;
+            delayms(1000);
+          if (KEY1 == 0)
+        {
+            delayms(10);
+            if (KEY1 == 0)
+            {
+                key_time = 0;
+                
+          while (!KEY1)
+          {
+              delayms(1);
+              key_time++;
+              if (key_time >=key_time_long)
+              {
+                  
+                  break;
+ 
+              }
+          }
+                if (key_time >= key_time_long)  //tipe:长按
+                {              flag = 1; //关闭设备
+            DEVICE_OFF; 
+            LIGHT_OFF;
+            //BEEP_OFF;  
+            LED1_OFF;
+            LED2_OFF;
+            light_flag = 0;
+            beep_flag = 6;
+            key_short_time = 0; 
+                    break;
+            
+                }
+          if (key_time<key_time_long)
+          {
+          key_time--;
+          delayms(1);
+          }    
+            }
+        }
+                
+
+            
+            
+
+          }
+        }
+        ad_flag = 0;
+        
+     //   if(low_flag==1)
+      //    break;
+      }
+
+        while (flag == 1)
+        {
+            if (KEY1 == 0)
+            {
+                delayms(10);
+                if (KEY1 == 0)
+                {
+                    key_time = 0;
+                  while (!KEY1)
+          {
+              delayms(1);
+              key_time++;
+              if (key_time >=key_time_long)
+              {
+
+                  break;
+              }
+          }
+                    if (key_time >= key_time_long)  //tipe:长按
+                    {     LED1_ON;
+                        flag = 0;
+                        device_flag = 1;
+                        light_flag = 0;   
+                        beep_flag = 6;       
+                    }
+                }
+            }
+             else
+      {
+        if (key_time > 0)
+        {
+          key_time--;
+          delayms(1);
+        }
+      }
+        }
+  }  
+}
+
+#ifdef USE_FULL_ASSERT
+
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *   where the assert_param error has occurred.
+  * @param file: pointer to the source file name
+  * @param line: assert_param error line source number
+  * @retval : None
+  */
+void assert_failed(u8* file, u32 line)
+{ 
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+
+  /* Infinite loop */
+  while (1)
+  {
+  }
+}
+
+
+
+#endif
+
+/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

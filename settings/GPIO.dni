@@ -1,0 +1,70 @@
+[Stack]
+FillEnabled=0
+OverflowWarningsEnabled=1
+WarningThreshold=90
+SpWarningsEnabled=1
+WarnLogOnly=1
+UseTrigger=1
+TriggerName=main
+LimitSize=0
+ByteLimit=50
+[DebugChecksum]
+Checksum=-980197054
+[CallStack]
+ShowArgs=0
+[Disassembly]
+MixedMode=1
+[InterruptLog]
+LogEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+SumEnabled=0
+ShowTimeSum=1
+SumSortOrder=0
+[DataLog]
+LogEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+SumEnabled=0
+ShowTimeSum=1
+[Breakpoints2]
+Count=0
+[Interrupts]
+Enabled=1
+[MemoryMap]
+Enabled=0
+Base=0
+UseAuto=0
+TypeViolation=1
+UnspecRange=1
+ActionState=1
+[Trace1]
+Enabled=0
+ShowSource=1
+[Simulator]
+Freq=16000000
+[DataSample]
+LogEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
+[Breakpoints]
+Bp0=_ "STD_CODE" "0x008142" 0 0 0 0 "" 0 ""
+Count=1
+[Aliases]
+A0=_ "C:\Documents and Settings\Administrator\桌面\STM8S103F3库例程\IAR\GPIO\STM8S_StdPeriph_Driver\src\stm8s_gpio.c" ""
+A1=_ "C:\Users\liuzenglin\Desktop\2021.03.23 基于STM8的4位数码管模块\GPIO\STM8S_StdPeriph_Driver\src\stm8s_gpio.c" ""
+A2=_ "C:\Users\liuzenglin\Desktop\2021.03.23 基于STM8的4位数码管模块\GPIO\stm8s_it.c" ""
+A3=_ "C:\Users\liuzenglin\Desktop\2021.09.02 激光\STM8程序\GPIO\STM8S_StdPeriph_Driver\src\stm8s_adc1.c" ""
+A4=_ "C:\Users\liuzenglin\Desktop\2021.09.02 激光\STM8程序\GPIO\STM8S_StdPeriph_Driver\src\stm8s_uart1.c" ""
+A5=_ "F:\刘增林\项目资料\2021.09 激光护眼仪\STM8程序 20220501\STM8程序 20220508\GPIO\main.c" ""
+Count=6
+SuppressDialog=1
+[DebuggerSettings]
+DisableInterruptsWhenStepping=0

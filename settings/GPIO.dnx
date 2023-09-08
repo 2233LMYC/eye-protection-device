@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<settings>
+    <Stack>
+        <FillEnabled>0</FillEnabled>
+        <OverflowWarningsEnabled>1</OverflowWarningsEnabled>
+        <WarningThreshold>90</WarningThreshold>
+        <SpWarningsEnabled>1</SpWarningsEnabled>
+        <WarnLogOnly>1</WarnLogOnly>
+        <UseTrigger>1</UseTrigger>
+        <TriggerName>main</TriggerName>
+        <LimitSize>0</LimitSize>
+        <ByteLimit>50</ByteLimit>
+    </Stack>
+    <DebugChecksum>
+        <Checksum>1529451972</Checksum>
+    </DebugChecksum>
+    <CallStack>
+        <ShowArgs>0</ShowArgs>
+    </CallStack>
+    <Disassembly>
+        <MixedMode>1</MixedMode>
+    </Disassembly>
+    <InterruptLog>
+        <LogEnabled>0</LogEnabled>
+        <GraphEnabled>0</GraphEnabled>
+        <ShowTimeLog>1</ShowTimeLog>
+        <SumEnabled>0</SumEnabled>
+        <ShowTimeSum>1</ShowTimeSum>
+        <SumSortOrder>0</SumSortOrder>
+    </InterruptLog>
+    <DataLog>
+        <LogEnabled>0</LogEnabled>
+        <GraphEnabled>0</GraphEnabled>
+        <ShowTimeLog>1</ShowTimeLog>
+        <SumEnabled>0</SumEnabled>
+        <ShowTimeSum>1</ShowTimeSum>
+    </DataLog>
+    <Breakpoints2>
+        <Count>0</Count>
+    </Breakpoints2>
+    <Interrupts>
+        <Enabled>1</Enabled>
+    </Interrupts>
+    <MemoryMap>
+        <Enabled>0</Enabled>
+        <Base>0</Base>
+        <UseAuto>0</UseAuto>
+        <TypeViolation>1</TypeViolation>
+        <UnspecRange>1</UnspecRange>
+        <ActionState>1</ActionState>
+    </MemoryMap>
+    <Trace1>
+        <Enabled>0</Enabled>
+        <ShowSource>1</ShowSource>
+    </Trace1>
+    <Simulator>
+        <Freq>16000000</Freq>
+    </Simulator>
+    <Log_file>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+        <Category>_ 0</Category>
+    </Log_file>
+    <DataSample>
+        <LogEnabled>0</LogEnabled>
+        <GraphEnabled>0</GraphEnabled>
+        <ShowTimeLog>1</ShowTimeLog>
+    </DataSample>
+    <LogFile>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+        <Category>_ 0</Category>
+    </LogFile>
+    <TermIOLog>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+    </TermIOLog>
+    <Breakpoints>
+        <Bp0>_ "STD_CODE" "0x008142" 0 0 0 0 "" 0 ""</Bp0>
+        <Count>1</Count>
+    </Breakpoints>
+    <Aliases>
+        <A0>_ "C:\Documents and Settings\Administrator\桌面\STM8S103F3库例程\IAR\GPIO\STM8S_StdPeriph_Driver\src\stm8s_gpio.c" ""</A0>
+        <A1>_ "C:\Users\liuzenglin\Desktop\2021.03.23 基于STM8的4位数码管模块\GPIO\STM8S_StdPeriph_Driver\src\stm8s_gpio.c" ""</A1>
+        <A2>_ "C:\Users\liuzenglin\Desktop\2021.03.23 基于STM8的4位数码管模块\GPIO\stm8s_it.c" ""</A2>
+        <A3>_ "C:\Users\liuzenglin\Desktop\2021.09.02 激光\STM8程序\GPIO\STM8S_StdPeriph_Driver\src\stm8s_adc1.c" ""</A3>
+        <A4>_ "C:\Users\liuzenglin\Desktop\2021.09.02 激光\STM8程序\GPIO\STM8S_StdPeriph_Driver\src\stm8s_clk.c" ""</A4>
+        <A5>_ "C:\Users\liuzenglin\Desktop\2021.09.02 激光\STM8程序\GPIO\STM8S_StdPeriph_Driver\src\stm8s_uart1.c" ""</A5>
+        <A6>_ "D:\桌面\护眼仪\STM8程序 20220620\STM8程序 20220620\GPIO\STM8S_StdPeriph_Driver\src\stm8s_clk.c" ""</A6>
+        <A7>_ "D:\桌面\护眼仪\STM8程序 20220620\STM8程序 20220620\GPIO\STM8S_StdPeriph_Driver\src\stm8s_gpio.c" ""</A7>
+        <A8>_ "F:\刘增林\项目资料\2021.09 激光护眼仪\STM8程序 20220501\STM8程序 20220508\GPIO\main.c" ""</A8>
+        <Count>9</Count>
+        <SuppressDialog>1</SuppressDialog>
+    </Aliases>
+    <DebuggerSettings>
+        <DisableInterruptsWhenStepping>0</DisableInterruptsWhenStepping>
+        <LeaveTargetRunning>0</LeaveTargetRunning>
+    </DebuggerSettings>
+</settings>
